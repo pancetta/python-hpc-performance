@@ -7,6 +7,7 @@ from threadpoolctl import threadpool_limits
 def matmul(matA, matB):
     matA @ matB
 
+
 @pytest.mark.benchmark(group="test_matmul_np")
 @pytest.mark.parametrize("limits", [1, 4])
 @pytest.mark.parametrize("dtype", ['float64', 'float32'])
@@ -19,6 +20,7 @@ def test_matmul_np(benchmark, dtype, limits, n, m):
 
     with threadpool_limits(limits=limits, user_api='blas'):
         benchmark(matmul, A, B)
+
 
 @pytest.mark.benchmark(group="test_matmul_sp")
 @pytest.mark.parametrize("density", [0.01, 0.005, 0.001])
