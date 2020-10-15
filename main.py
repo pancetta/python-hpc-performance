@@ -15,7 +15,7 @@ except ImportError:
     comm = None
 
 
-def add_to_results(results, benchmark, rounds, durations, overall_time):
+def add_to_results(results, benchmark, rounds, durations, overall_time, comm):
     result = dict()
     result['name'] = benchmark.name
     result['rounds'] = rounds
@@ -39,7 +39,15 @@ def add_to_results(results, benchmark, rounds, durations, overall_time):
     while id in results:
         c += 1
         id = id.rpartition('_')[0] + '_' + str(c)
-    results[id] = result
+    if comm.Get_size() > 1:
+        rank = comm.Get_rank()
+        id += '_rank' + str(rank)
+        result_gather = comm.gather((id, result), root=0)
+        if rank == 0:
+            for id, result in result_gather:
+                results[id] = result
+    else:
+        results[id] = result
 
     return results
 
@@ -73,7 +81,8 @@ def eval_results(results):
                   f"{results[key]['overall_time']:6.4e}")
 
 def save_results(results):
-    with open("results.json", "w") as write_file:
+    fname = 'results.json'
+    with open(fname, "w") as write_file:
         json.dump(results, write_file)
 
 
@@ -103,18 +112,18 @@ def main():
             rounds += 1
             benchmark.reset()
             duration = benchmark.run()
-            if comm is not None:
+            if comm.Get_size() > 1:
                 sum_durations += comm.allreduce(sendobj=duration, op=MPI.SUM) / comm.Get_size()
             else:
                 sum_durations += duration
             durations.append(duration)
 
         t1 = time.time()
-        results = add_to_results(results, benchmark, rounds, durations, t1 - t0)
+        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, comm)
 
         benchmark.tear_down()
     save_results(results)
-    eval_results(results)
+    # eval_results(results)
 
 
 if __name__ == '__main__':
