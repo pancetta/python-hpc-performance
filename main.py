@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
 import numpy as np
+import time
 
 import benchmarks
 from tools.registry import registry
@@ -12,10 +13,11 @@ except ImportError:
     comm = None
 
 
-def add_to_results(results, benchmark, rounds, durations):
+def add_to_results(results, benchmark, rounds, durations, overall_time):
     result = dict()
     result['name'] = benchmark.name
     result['rounds'] = rounds
+    result['overall_time'] = overall_time
     params = benchmark.params.__dict__.copy()
     params.pop('_FrozenClass__isfrozen')
     result['params'] = params
@@ -42,7 +44,8 @@ def add_to_results(results, benchmark, rounds, durations):
 
 def gather_benchmarks():
 
-    filter = {'partype': 'mpi', 'min_procs': 1}
+    # filter = {'partype': 'mpi', 'min_procs': 1}
+    filter = {'partype': 'multithreaded', 'min_procs': 1}
 
     benchmarks = []
     for entry in registry:
@@ -65,34 +68,38 @@ def eval_results(results):
         sortkeys = sorted(grouped_results[group], key=lambda x: results[x]['statistics']['mean'])
         for key in sortkeys:
             ratio = results[key]['statistics']['mean'] / results[sortkeys[0]]['statistics']['mean']
-            print(f"{key}:\t {results[key]['rounds']:6d}\t {results[key]['statistics']['mean']:10.6e} ({ratio:4.2f})")
+            print(f"{key}:\t {results[key]['rounds']:6d}\t {results[key]['statistics']['mean']:10.6e} ({ratio:4.2f})\t"
+                  f"{results[key]['overall_time']:6.4e}")
 
 
 def main():
 
-    maxtime_per_benchmark = 1E-01
+    maxtime_per_benchmark = 1E-00
     maxrounds_per_benchmark = 10000
+    results = dict()
 
     benchmarks = gather_benchmarks()
 
-    results = dict()
-    for benchmark, bench_params, _ in benchmarks:
-        b = benchmark(comm=comm, params=bench_params)
+    for benchmark_class, bench_params, _ in benchmarks:
+        t0 = time.time()
+        benchmark = benchmark_class(comm=comm, params=bench_params)
         durations = []
         rounds = 0
         sum_durations = 0
+
         while sum_durations < maxtime_per_benchmark and rounds < maxrounds_per_benchmark:
             rounds += 1
-            b.reset()
-            durations.append(b.run())
+            benchmark.reset()
+            duration = benchmark.run()
             if comm is not None:
-                sum_durations += comm.allreduce(sendobj=durations[-1], op=MPI.SUM) / comm.Get_size()
+                sum_durations += comm.allreduce(sendobj=duration, op=MPI.SUM) / comm.Get_size()
             else:
-                sum_durations += durations[-1]
-            # print(sum(durations))
-        # print(rounds, sum(durations), sum(durations) / rounds)
-        results = add_to_results(results, b, rounds, durations)
-        b.tear_down()
+                sum_durations += duration
+            durations.append(duration)
+
+        t1 = time.time()
+        results = add_to_results(results, benchmark, rounds, durations, t1 - t0)
+        benchmark.tear_down()
 
     eval_results(results)
 
