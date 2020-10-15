@@ -2,6 +2,8 @@ import itertools
 from collections import defaultdict
 import numpy as np
 import time
+import configparser
+import argparse
 
 import benchmarks
 from tools.registry import registry
@@ -42,10 +44,7 @@ def add_to_results(results, benchmark, rounds, durations, overall_time):
     return results
 
 
-def gather_benchmarks():
-
-    # filter = {'partype': 'mpi', 'min_procs': 1}
-    filter = {'partype': 'multithreaded', 'min_procs': 1}
+def gather_benchmarks(filter):
 
     benchmarks = []
     for entry in registry:
@@ -73,12 +72,19 @@ def eval_results(results):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', dest='filename', type=str, default='example.ini',
+                        help='input file for the configuration parameters (default: example.ini)')
+    args = parser.parse_args()
+    config = configparser.ConfigParser()
+    config.read(args.filename)
 
-    maxtime_per_benchmark = 1E-00
-    maxrounds_per_benchmark = 10000
+    maxtime_per_benchmark = config['main'].getfloat('maxtime_per_benchmark')
+    maxrounds_per_benchmark = config['main'].getint('maxrounds_per_benchmark')
+
     results = dict()
 
-    benchmarks = gather_benchmarks()
+    benchmarks = gather_benchmarks(dict(config['filter']))
 
     for benchmark_class, bench_params, _ in benchmarks:
         t0 = time.time()
