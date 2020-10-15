@@ -4,8 +4,8 @@ import numpy as np
 import time
 import configparser
 import argparse
+import json
 
-import benchmarks
 from tools.registry import registry
 
 try:
@@ -45,6 +45,7 @@ def add_to_results(results, benchmark, rounds, durations, overall_time):
 
 
 def gather_benchmarks(filter):
+    import benchmarks  # have to keep this to fill the registry needed below (magic happens in __init__.py)
 
     benchmarks = []
     for entry in registry:
@@ -53,6 +54,7 @@ def gather_benchmarks(filter):
             list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
             for params in list_of_params:
                 benchmarks.append((entry[0], params, entry[1]))
+
     return benchmarks
 
 
@@ -67,8 +69,12 @@ def eval_results(results):
         sortkeys = sorted(grouped_results[group], key=lambda x: results[x]['statistics']['mean'])
         for key in sortkeys:
             ratio = results[key]['statistics']['mean'] / results[sortkeys[0]]['statistics']['mean']
-            print(f"{key}:\t {results[key]['rounds']:6d}\t {results[key]['statistics']['mean']:10.6e} ({ratio:4.2f})\t"
+            print(f"{key}:\t {results[key]['rounds']:6d}\t {results[key]['statistics']['mean']:6.4e} ({ratio:4.2f})\t"
                   f"{results[key]['overall_time']:6.4e}")
+
+def save_results(results):
+    with open("results.json", "w") as write_file:
+        json.dump(results, write_file)
 
 
 def main():
@@ -105,8 +111,9 @@ def main():
 
         t1 = time.time()
         results = add_to_results(results, benchmark, rounds, durations, t1 - t0)
-        benchmark.tear_down()
 
+        benchmark.tear_down()
+    save_results(results)
     eval_results(results)
 
 

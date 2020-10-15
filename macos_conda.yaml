@@ -1,0 +1,46 @@
+name: macos_conda_corei5_multithread
+outpath: bench_run
+comment: JUBE file for running the benchmark suite on my Macbook Pro 2018
+
+#Configuration
+parameterset:
+  name: param_set
+  parameter:
+    - {name: maxtime_per_benchmark, type: float,  _: "1E-01"} #comma separated integers must be quoted
+    - {name: maxrounds_per_benchmark, type: int, _: "10000"}
+#    - {name: i, _: '0, 1'}
+#    - {name: partype, mode: python, _: '["mpi", "multithreaded"][$i]'}
+#    - {name: runscript, mode: python, _: '["mpirun -np 2 python", "env OMP_NUM_THREADS=1 python"][$i]'}
+    - {name: partype, type: str, _: "multithreaded"}
+    - {name: nthreads, type: int, _: "1, 2, 4"}
+#    - {name: runscript, mode: python, _: '"env OMP_NUM_THREADS=$nthreads python"'}
+
+#Files
+fileset:
+  name: files
+  copy:
+    - input.tmpl
+    - main.py
+
+#Substitute
+substituteset:
+  name: substitute
+  iofile: {in: input.tmpl, out: input.ini}
+  sub:
+    - {source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark}
+    - {source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark}
+    - {source: "#partype#", dest: $partype}
+
+#Operation
+step:
+  name: sub_step
+  shared: shared
+  use:
+    - param_set #use existing parameterset
+    - files #use existing fileset
+    - substitute #use existing substituteset
+  do:
+    - export PYTHONPATH=../../../..:$PYTHONPATH
+#    - $runscript main.py --input input.ini
+    - env OMP_NUM_THREADS=$nthreads python main.py --input input.ini
+    - cp results.json shared/results_nthreads=${nthreads}.json

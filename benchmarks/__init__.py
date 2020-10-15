@@ -1,7 +1,7 @@
 from tools.registry import register
 
 from .matmul import MatMul
-from.mpi_broadcast import MPI_Broadcast
+from .mpi_broadcast import MPI_Broadcast
 
 register(cls=MatMul,
          bench_type={'partype': 'multithreaded', 'min_procs': 1, 'max_procs': None},
