@@ -1,4 +1,4 @@
-name: macos_conda_corei5_multithread
+name: macos_conda_corei5
 outpath: bench_run
 comment: JUBE file for running the benchmark suite on my Macbook Pro 2018
 
