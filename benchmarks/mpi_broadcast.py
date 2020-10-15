@@ -7,26 +7,30 @@ from .benchmarks import Benchmarks
 
 class MPI_Broadcast(Benchmarks):
 
-    def __init__(self, params):
-        super(MPI_Broadcast, self).__init__(name='mpi_broadcast', params=params)
+    def __init__(self, comm, params):
 
-    def run(self):
-        comm = MPI.COMM_WORLD
+        if comm is None:
+            raise ValueError('No valid MPI communicator given')
 
-        if comm.rank == 0:
-            A = np.arange(self.params.n, dtype=self.params.dtype)  # rank 0 has proper data
+        super(MPI_Broadcast, self).__init__(name='mpi_broadcast', comm=comm, params=params)
+
+        if comm.Get_rank() == 0:
+            self.A = np.arange(self.params.n, dtype=self.params.dtype)  # rank 0 has proper data
         else:
-            A = np.empty(self.params.n, dtype=self.params.dtype)  # all other just an empty array
+            self.A = np.empty(self.params.n, dtype=self.params.dtype)  # all other just an empty array
 
         if self.params.dtype == 'float64':
-            mpi_dtype = MPI.DOUBLE
+            self.mpi_dtype = MPI.DOUBLE
         else:
             raise NotImplementedError()
 
-        comm.Barrier()
+    def reset(self):
+        self.comm.Barrier()
+
+    def run(self):
 
         t0 = time.time()
-        comm.Bcast([A, mpi_dtype])
+        self.comm.Bcast([self.A, self.mpi_dtype])
         t1 = time.time()
 
         return t1 - t0
