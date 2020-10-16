@@ -3,14 +3,15 @@ fileset:
   copy:
     - input.tmpl
     - main.py
+    - eval.py
 
 substituteset:
   name: substitute
   iofile: { in: input.tmpl, out: input.ini }
   sub:
-    - {source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark}
-    - {source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark}
-    - {source: "#partype#", dest: $partype}
+    - { source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark }
+    - { source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark }
+    - { source: "#partype#", dest: $partype }
 
 benchmark:
 - name: pybench_macos_conda_corei5_mt
@@ -19,10 +20,10 @@ benchmark:
   parameterset:
     name: param_set
     parameter:
-      - {name: maxtime_per_benchmark, type: float,  _: "1E-01"} #comma separated integers must be quoted
-      - {name: maxrounds_per_benchmark, type: int, _: "10000"}
-      - {name: partype, type: str, _: "multithreaded"}
-      - {name: nthreads, type: int, _: "1, 2, 4"}
+      - { name: maxtime_per_benchmark, type: float,  _: "1E-01" } #comma separated integers must be quoted
+      - { name: maxrounds_per_benchmark, type: int, _: "10000" }
+      - { name: partype, type: str, _: "multithreaded" }
+      - { name: nthreads, type: int, _: "1, 2, 4" }
   step:
     name: sub_step
     shared: shared
@@ -34,6 +35,8 @@ benchmark:
       - export PYTHONPATH=../../../..:$PYTHONPATH
       - env OMP_NUM_THREADS=$nthreads python main.py --input input.ini
       - cp results.json shared/results_nthreads=${nthreads}.json
+      - cp eval.py shared/.
+      - { shared: true, _: python eval.py }
 
 - name: pybench_macos_conda_corei5_mpi
   outpath: bench_run
@@ -56,3 +59,5 @@ benchmark:
       - export PYTHONPATH=../../../..:$PYTHONPATH
       - mpirun -np $nranks python main.py --input input.ini
       - cp results.json shared/results_nranks=${nranks}.json
+      - cp eval.py shared/.
+      - { shared: true, _: python eval.py }
