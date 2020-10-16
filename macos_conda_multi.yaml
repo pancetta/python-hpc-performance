@@ -14,6 +14,29 @@ substituteset:
     - { source: "#partype#", dest: $partype }
 
 benchmark:
+- name: pybench_macos_conda_corei5_seq
+  outpath: bench_run
+  comment: JUBE file for running the benchmark suite on my Macbook Pro 2018 (sequential)
+  parameterset:
+    name: param_set
+    parameter:
+      - { name: maxtime_per_benchmark, type: float,  _: "1E-01" } #comma separated integers must be quoted
+      - { name: maxrounds_per_benchmark, type: int, _: "10000" }
+      - { name: partype, type: str, _: "sequential" }
+  step:
+    name: sub_step
+    shared: shared
+    use:
+      - param_set #use existing parameterset
+      - files #use existing fileset
+      - substitute #use existing substituteset
+    do:
+      - export PYTHONPATH=../../../..:$PYTHONPATH
+      - python main.py --input input.ini
+      - cp results.json shared/results.json
+      - cp eval.py shared/.
+      - { shared: true, _: python eval.py }
+
 - name: pybench_macos_conda_corei5_mt
   outpath: bench_run
   comment: JUBE file for running the benchmark suite on my Macbook Pro 2018 (multithreaded)

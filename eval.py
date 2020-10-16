@@ -10,10 +10,12 @@ def augment_and_join_result_dicts(result_files):
         with open(file, "r") as read_file:
             result = json.load(read_file)
         for item in result:
-            patterns = re.search('results_(.*).json', file)[1].split('_')
-            for pattern in patterns:
-                k, v = pattern.split('=')
-                item['run_' + k] = v
+            patterns = re.search('results_(.*).json', file)
+            if patterns is not None:
+                patterns = patterns[1].split('_')
+                for pattern in patterns:
+                    k, v = pattern.split('=')
+                    item['run_' + k] = v
             results.append(item)
     return results
 
@@ -37,7 +39,7 @@ def main():
     parser.add_argument('--dir', dest='dir', type=str, default='.',
                         help='input directory for the result files (default: .)')
     args = parser.parse_args()
-    result_files = glob.glob(args.dir + '/' + 'results_*.json')
+    result_files = glob.glob(args.dir + '/' + 'results*.json')
 
     results = augment_and_join_result_dicts(result_files)
     eval_results(results)
