@@ -1,5 +1,4 @@
 import itertools
-from collections import defaultdict
 import numpy as np
 import time
 import configparser
@@ -23,31 +22,25 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, comm):
     params = benchmark.params.__dict__.copy()
     params.pop('_FrozenClass__isfrozen')
     result['params'] = params
+    # for k, v in params.items():
+    #     result[k] = v
     # result['durations'] = durations[0:10]
-    result['statistics'] = {'min': np.amin(durations),
-                            'max': np.amax(durations),
-                            'mean': np.mean(durations),
-                            'median': np.median(durations),
-                            'std': np.std(durations),
-                            'var': np.var(durations)}
-
-    id = benchmark.name
-    for k, v in params.items():
-        id += '_' + str(k) + '=' + str(v)
-    c = 0
-    id += '_' + str(c)
-    while id in results:
-        c += 1
-        id = id.rpartition('_')[0] + '_' + str(c)
-    if comm.Get_size() > 1:
+    result['min_duration'] = np.amin(durations)
+    result['max_duration'] = np.amax(durations)
+    result['mean_duration'] = np.mean(durations)
+    result['median_duration'] = np.median(durations)
+    result['std_duration'] = np.std(durations)
+    result['var_duration'] = np.var(durations)
+    if comm is not None and comm.Get_size() > 1:
         rank = comm.Get_rank()
-        id += '_rank' + str(rank)
-        result_gather = comm.gather((id, result), root=0)
+        result['MPI_rank'] = rank
+        result['MPI_size'] = comm.Get_size()
+        result_gather = comm.gather(result, root=0)
         if rank == 0:
-            for id, result in result_gather:
-                results[id] = result
+            for result in result_gather:
+                results.append(result)
     else:
-        results[id] = result
+        results.append(result)
 
     return results
 
@@ -68,17 +61,16 @@ def gather_benchmarks(filter):
 
 def eval_results(results):
 
-    grouped_results = defaultdict(list)
-    for k, v in results.items():
-        grouped_results[v['name']].append(k)
+    for name in set(r['name'] for r in results):
+        print('-' * 10 + ' ' + name + ' ' + '-' * 10)
+        sortedgroup = sorted(filter(lambda item: item.get('name') == name, results), key=lambda x: x['mean_duration'])
+        for res in sortedgroup:
+            ratio = res['mean_duration'] / sortedgroup[0]['mean_duration']
+            print(f"{name} - {res['params']}:\t "
+                  f"{res['rounds']:6d}\t "
+                  f"{res['mean_duration']:6.4e} ({ratio:4.2f})\t "
+                  f"{res['overall_time']:6.4e}")
 
-    for group, _ in grouped_results.items():
-        print('-' * 10 + ' ' + group + ' ' + '-' * 10)
-        sortkeys = sorted(grouped_results[group], key=lambda x: results[x]['statistics']['mean'])
-        for key in sortkeys:
-            ratio = results[key]['statistics']['mean'] / results[sortkeys[0]]['statistics']['mean']
-            print(f"{key}:\t {results[key]['rounds']:6d}\t {results[key]['statistics']['mean']:6.4e} ({ratio:4.2f})\t"
-                  f"{results[key]['overall_time']:6.4e}")
 
 def save_results(results):
     fname = 'results.json'
@@ -97,7 +89,7 @@ def main():
     maxtime_per_benchmark = config['main'].getfloat('maxtime_per_benchmark')
     maxrounds_per_benchmark = config['main'].getint('maxrounds_per_benchmark')
 
-    results = dict()
+    results = []
 
     benchmarks = gather_benchmarks(dict(config['filter']))
 
@@ -123,7 +115,7 @@ def main():
 
         benchmark.tear_down()
     save_results(results)
-    # eval_results(results)
+    eval_results(results)
 
 
 if __name__ == '__main__':
