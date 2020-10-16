@@ -21,9 +21,9 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, comm):
     result['overall_time'] = overall_time
     params = benchmark.params.__dict__.copy()
     params.pop('_FrozenClass__isfrozen')
-    result['params'] = params
-    # for k, v in params.items():
-    #     result[k] = v
+    # result['params'] = params
+    for k, v in params.items():
+        result['params_' + k] = v
     # result['durations'] = durations[0:10]
     result['min_duration'] = np.amin(durations)
     result['max_duration'] = np.amax(durations)
@@ -66,7 +66,7 @@ def eval_results(results):
         sortedgroup = sorted(filter(lambda item: item.get('name') == name, results), key=lambda x: x['mean_duration'])
         for res in sortedgroup:
             ratio = res['mean_duration'] / sortedgroup[0]['mean_duration']
-            print(f"{name} - {res['params']}:\t "
+            print(f"{ {key: res[key] for key in res if key.startswith('params')} }:\t "
                   f"{res['rounds']:6d}\t "
                   f"{res['mean_duration']:6.4e} ({ratio:4.2f})\t "
                   f"{res['overall_time']:6.4e}")
