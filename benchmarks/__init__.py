@@ -23,6 +23,6 @@ register(cls=MatMulSparse,
 
 register(cls=MPI_Broadcast,
          bench_type={'partype': 'mpi', 'min_procs': 1, 'max_procs': None},
-         bench_params={'n': [1000, 10000], 'dtype': ['float64']}
+         bench_params={'n': [10000, 100000], 'dtype': ['float64']}
          )
 
