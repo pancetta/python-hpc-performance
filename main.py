@@ -14,7 +14,7 @@ except ImportError:
     comm = None
 
 
-def add_to_results(results, benchmark, rounds, durations, overall_time, comm):
+def add_to_results(results, benchmark, rounds, durations, overall_time, comm, timeline_factor):
     result = dict()
     result['name'] = benchmark.name
     result['rounds'] = rounds
@@ -24,13 +24,18 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, comm):
     # result['params'] = params
     for k, v in params.items():
         result['params_' + k] = v
-    # result['durations'] = durations[0:10]
+    # result['durations'] = durations
     result['min_duration'] = np.amin(durations)
     result['max_duration'] = np.amax(durations)
     result['mean_duration'] = np.mean(durations)
     result['median_duration'] = np.median(durations)
     result['std_duration'] = np.std(durations)
     result['var_duration'] = np.var(durations)
+
+    resolution = overall_time / (overall_time // (min(len(durations), timeline_factor) * np.mean(durations)))
+    result['timeline'] = np.histogram(np.cumsum(durations),
+                                      bins=np.arange(0, overall_time + resolution, resolution))[0].tolist()
+
     if comm is not None and comm.Get_size() > 1:
         rank = comm.Get_rank()
         result['MPI_rank'] = rank
@@ -88,6 +93,7 @@ def main():
 
     maxtime_per_benchmark = config['main'].getfloat('maxtime_per_benchmark')
     maxrounds_per_benchmark = config['main'].getint('maxrounds_per_benchmark')
+    timeline_factor = config['main'].getint('timeline_factor')
 
     results = []
 
@@ -111,7 +117,7 @@ def main():
             durations.append(duration)
 
         t1 = time.time()
-        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, comm)
+        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, comm, timeline_factor)
 
         benchmark.tear_down()
     save_results(results)

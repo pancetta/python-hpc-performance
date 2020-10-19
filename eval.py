@@ -2,6 +2,8 @@ import argparse
 import glob
 import json
 import re
+import platform
+import psutil
 
 
 def augment_and_join_result_dicts(result_files):
@@ -27,11 +29,28 @@ def eval_results(results):
         sortedgroup = sorted(filter(lambda item: item.get('name') == name, results), key=lambda x: x['mean_duration'])
         for res in sortedgroup:
             ratio = res['mean_duration'] / sortedgroup[0]['mean_duration']
-            param_str = {**{key: res[key] for key in res if key.startswith('params')}, **{key: res[key] for key in res if key.startswith('run')}}
+            param_str = {**{key: res[key] for key in res if key.startswith('params')},
+                         **{key: res[key] for key in res if key.startswith('run')}}
             print(f"{param_str}:\t "
                   f"{res['rounds']:6d}\t "
                   f"{res['mean_duration']:6.4e} ({ratio:4.2f})\t "
                   f"{res['overall_time']:6.4e}")
+
+
+def get_system_info():
+    info = dict()
+    info['platform'] = platform.system()
+    info['platform-release'] = platform.release()
+    info['platform-version'] = platform.version()
+    info['architecture'] = platform.machine()
+    info['processor'] = platform.processor()
+    info['physical cores'] = psutil.cpu_count(logical=False)
+    info['total cores'] = psutil.cpu_count(logical=True)
+    info['cpu frequency (min/max)'] = (psutil.cpu_freq().min, psutil.cpu_freq().max)
+    info['ram'] = str(round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
+    fname = 'machine_data.json'
+    with open(fname, "w") as write_file:
+        json.dump(info, write_file)
 
 
 def main():
@@ -42,6 +61,10 @@ def main():
     result_files = glob.glob(args.dir + '/' + 'results*.json')
 
     results = augment_and_join_result_dicts(result_files)
+    fname = 'results_all.json'
+    with open(fname, "w") as write_file:
+        json.dump(results, write_file)
+    get_system_info()
     eval_results(results)
 
 
