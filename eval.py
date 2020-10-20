@@ -2,8 +2,6 @@ import argparse
 import glob
 import json
 import re
-import platform
-import psutil
 
 
 def augment_and_join_result_dicts(result_files):
@@ -37,22 +35,6 @@ def eval_results(results):
                   f"{res['overall_time']:6.4e}")
 
 
-def get_system_info():
-    info = dict()
-    info['platform'] = platform.system()
-    info['platform-release'] = platform.release()
-    info['platform-version'] = platform.version()
-    info['architecture'] = platform.machine()
-    info['processor'] = platform.processor()
-    info['physical cores'] = psutil.cpu_count(logical=False)
-    info['total cores'] = psutil.cpu_count(logical=True)
-    info['cpu frequency (min/max)'] = (psutil.cpu_freq().min, psutil.cpu_freq().max)
-    info['ram'] = str(round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
-    fname = 'machine_data.json'
-    with open(fname, "w") as write_file:
-        json.dump(info, write_file)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', dest='dir', type=str, default='.',
@@ -64,7 +46,6 @@ def main():
     fname = 'results_all.json'
     with open(fname, "w") as write_file:
         json.dump(results, write_file)
-    get_system_info()
     eval_results(results)
 
 

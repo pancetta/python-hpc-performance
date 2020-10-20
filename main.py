@@ -4,6 +4,8 @@ import time
 import configparser
 import argparse
 import json
+import platform
+import psutil
 
 from tools.registry import registry
 
@@ -14,16 +16,36 @@ except ImportError:
     comm = None
 
 
+def get_system_info():
+    info = dict()
+    info['platform'] = platform.system()
+    info['platform-release'] = platform.release()
+    info['platform-version'] = platform.version()
+    info['architecture'] = platform.machine()
+    info['processor'] = platform.processor()
+    info['physical-cores'] = psutil.cpu_count(logical=False)
+    info['total-cores'] = psutil.cpu_count(logical=True)
+    info['cpu-frequency'] = (psutil.cpu_freq().min, psutil.cpu_freq().max)
+    info['ram'] = str(round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
+    return info
+
+
 def add_to_results(results, benchmark, rounds, durations, overall_time, analysis_resolution, comm):
     result = dict()
     result['name'] = benchmark.name
+
+    info = get_system_info()
+    for k, v in info.items():
+        result['info_' + k] = v
+
     result['rounds'] = rounds
     result['overall_time'] = overall_time
+
     params = benchmark.params.__dict__.copy()
     params.pop('_FrozenClass__isfrozen')
-    # result['params'] = params
     for k, v in params.items():
         result['params_' + k] = v
+
     # result['durations'] = durations
     result['min_duration'] = np.amin(durations)
     result['max_duration'] = np.amax(durations)
@@ -31,6 +53,7 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, analysis
     result['median_duration'] = np.median(durations)
     result['std_duration'] = np.std(durations)
     result['var_duration'] = np.var(durations)
+
     if comm is not None and comm.Get_size() > 1:
         result['sum_durations'] = comm.allreduce(sum(durations), MPI.MAX)
     else:
