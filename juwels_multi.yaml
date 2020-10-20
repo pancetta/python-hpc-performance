@@ -1,0 +1,86 @@
+#Files
+fileset:
+  name: files
+  copy:
+    - input.tmpl
+    - main.py
+    - eval.py
+    - jobscript_JUWELS.tmpl
+
+#Substitute
+substituteset:
+  - name: substitute_params
+    iofile: {in: input.tmpl, out: input.ini}
+    sub:
+      - {source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark}
+      - {source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark}
+      - {source: "#partype#", dest: $partype}
+  - name: substitute_job
+    iofile: {in: jobscript_JUWELS.tmpl, out: jobscript_JUWELS.exe}
+    sub:
+      - {source: "#NNODES#", dest: $nnodes}
+      - {source: "#NTASKS#", dest: $ntasks}
+      - {source: "#NCPUS#", dest: $ncpus}
+
+benchmark:
+  - name: juwels_mt
+    outpath: bench_run
+    comment: JUBE file for running the benchmark suite on JUWELS (multithreaded)
+
+    #Configuration
+    parameterset:
+      name: param_set
+      parameter:
+        - { name: maxtime_per_benchmark, type: float,  _: "5E-00" } #comma separated integers must be quoted
+        - { name: maxrounds_per_benchmark, type: int, _: "100000" }
+        - { name: partype, type: str, _: "multithreaded" }
+        - { name: nnodes, type: int, _: "1" }
+        - { name: ntasks, type: int, _: "2" }
+        - { name: ncpus, type: int, _: "1, 12, 24" }
+        - { name: outfile, type: str, _: "results_nthreads=${ncpus}.json" }
+
+    #Operation
+    step:
+      name: sub_step
+      shared: shared
+      use:
+        - param_set #use existing parameterset
+        - files #use existing fileset
+        - substitute_params #use existing substituteset
+        - substitute_job #use existing substituteset
+      do:
+        - { done_file: ready, _: sbatch -A cstma jobscript_JUWELS.exe }
+        - cp eval.py shared/.
+        - cp results.json shared/$outfile
+        - { shared: true, _: python eval.py }
+
+  - name: juwels_mpi
+    outpath: bench_run
+    comment: JUBE file for running the benchmark suite on JUWELS (MPI)
+
+    #Configuration
+    parameterset:
+      name: param_set
+      parameter:
+        - { name: maxtime_per_benchmark, type: float,  _: "5E-00" } #comma separated integers must be quoted
+        - { name: maxrounds_per_benchmark, type: int, _: "100000" }
+        - { name: partype, type: str, _: "mpi" }
+        - { name: nnodes, type: int, _: "1" }
+        - { name: ntasks, type: int, _: "1, 24, 48" }
+        - { name: ncpus, type: int, _: "1" }
+        - { name: outfile, type: str, _: "results_nranks=${ntasks}.json" }
+
+    #Operation
+    step:
+      name: sub_step
+      shared: shared
+      use:
+        - param_set #use existing parameterset
+        - files #use existing fileset
+        - substitute_params #use existing substituteset
+        - substitute_job #use existing substituteset
+      do:
+        - { done_file: ready, _: sbatch -A cstma jobscript_JUWELS.exe }
+        - cp eval.py shared/.
+        - cp results.json shared/$outfile
+        - { shared: true, _: python eval.py }
