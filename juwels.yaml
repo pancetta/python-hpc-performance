@@ -1,0 +1,51 @@
+name: juwels
+outpath: bench_run
+comment: JUBE file for running the benchmark suite on JUWELS
+
+#Configuration
+parameterset:
+  name: param_set
+  parameter:
+    - {name: maxtime_per_benchmark, type: float,  _: "5E-00"} #comma separated integers must be quoted
+    - {name: maxrounds_per_benchmark, type: int, _: "100000"}
+    - {name: partype, type: str, _: "multithreaded"}
+    - {name: nnodes, type: int, _: "1"}
+    - {name: ntasks, type: int, _: "2"}
+    - {name: ncpus, type: int, _: "1, 12, 24"}
+
+#Files
+fileset:
+  name: files
+  copy:
+    - input.tmpl
+    - main.py
+    - jobscript_JUWELS.tmpl
+
+#Substitute
+substituteset:
+  - name: substitute_params
+    iofile: {in: input.tmpl, out: input.ini}
+    sub:
+      - {source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark}
+      - {source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark}
+      - {source: "#partype#", dest: $partype}
+  - name: substitute_job
+    iofile: {in: jobscript_JUWELS.tmpl, out: jobscript_JUWELS.exe}
+    sub:
+      - {source: "#NNODES#", dest: $nnodes}
+      - {source: "#NTASKS#", dest: $ntasks}
+      - {source: "#NCPUS#", dest: $ncpus}
+
+#Operation
+step:
+  name: sub_step
+  shared: shared
+  use:
+    - param_set #use existing parameterset
+    - files #use existing fileset
+    - substitute_params #use existing substituteset
+    - substitute_job #use existing substituteset
+  do:
+    done_file: ready
+    - sbatch -A cstma jobscript_JUWELS.exe
+    - cp results.json shared/results_nthreads=${nthreads}.json
