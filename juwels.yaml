@@ -19,6 +19,7 @@ fileset:
   copy:
     - input.tmpl
     - main.py
+    - eval.py
     - jobscript_JUWELS.tmpl
 
 #Substitute
@@ -35,6 +36,7 @@ substituteset:
       - {source: "#NNODES#", dest: $nnodes}
       - {source: "#NTASKS#", dest: $ntasks}
       - {source: "#NCPUS#", dest: $ncpus}
+      - {source: "#OUTFILE#", dest: results_nthreads=$ncpus.json}
 
 #Operation
 step:
@@ -46,6 +48,6 @@ step:
     - substitute_params #use existing substituteset
     - substitute_job #use existing substituteset
   do:
-    done_file: ready
-    - sbatch -A cstma jobscript_JUWELS.exe
-    - cp results.json shared/results_nthreads=${nthreads}.json
+    - {done_file: ready, _: sbatch -A cstma jobscript_JUWELS.exe}
+    - cp eval.py shared/.
+    - { shared: true, _: python eval.py }

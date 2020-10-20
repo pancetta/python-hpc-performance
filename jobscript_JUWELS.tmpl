@@ -9,5 +9,6 @@
 
 export PYTHONPATH=$PYTHONPATH:/p/project/ccstma/cstma000/performance
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-srun python main.py
+srun python main.py --input input.ini
+cp results.json shared/#OUTFILE#
 touch ready
