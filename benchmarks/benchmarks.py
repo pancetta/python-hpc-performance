@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 class Benchmarks(object):
 
-    def __init__(self, name=None, comm=None, params=None):
+    def __init__(self, name=None, params=None, comm=None):
         self.name = name
         self.comm = comm
         self.params = Params(params)

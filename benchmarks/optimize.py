@@ -7,8 +7,8 @@ from .benchmarks import Benchmarks
 
 class Optimize(Benchmarks):
 
-    def __init__(self, comm, params):
-        super(Optimize, self).__init__(name='optimize', comm=comm, params=params)
+    def __init__(self, name, params, comm):
+        super(Optimize, self).__init__(name=name, params=params, comm=comm)
         np.random.seed(0)
         self.x0 = np.random.rand(self.params.n)
 

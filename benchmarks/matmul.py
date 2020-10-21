@@ -7,8 +7,8 @@ from .benchmarks import Benchmarks
 
 class MatMul(Benchmarks):
 
-    def __init__(self, comm, params):
-        super(MatMul, self).__init__(name='matmul', comm=comm, params=params)
+    def __init__(self, name, params, comm):
+        super(MatMul, self).__init__(name=name, params=params, comm=comm)
         np.random.seed(0)
         self.matA = np.random.rand(self.params.n, self.params.m).astype(self.params.dtype)
         self.matB = np.random.rand(self.params.m, self.params.n).astype(self.params.dtype)
@@ -23,8 +23,9 @@ class MatMul(Benchmarks):
 
 
 class MatMulSparse(Benchmarks):
-    def __init__(self, comm, params):
-        super(MatMulSparse, self).__init__(name='matmul_sp', comm=comm, params=params)
+
+    def __init__(self, name, params, comm):
+        super(MatMulSparse, self).__init__(name=name, params=params, comm=comm)
         np.random.seed(0)
         self.matA = sp.random(self.params.n, self.params.m, density=self.params.density)
         self.matB = sp.random(self.params.m, self.params.n, density=self.params.density)
