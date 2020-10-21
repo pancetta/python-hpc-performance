@@ -7,6 +7,7 @@ from .mpi_broadcast import MPI_Broadcast
 from .imports import Import
 from .numpy_output import NumpyOutput
 from .numpy_input import NumpyInput
+from .montecarlo import MonteCarlo
 
 
 register(cls=Optimize,
@@ -42,4 +43,9 @@ register(cls=NumpyOutput,
 register(cls=NumpyInput,
          bench_type={'name': 'numpy_input', 'partype': 'sequential', 'min_procs': 1, 'max_procs': None},
          bench_params={'n3d': [512], 'compressed': [True, False]}
+         )
+
+register(cls=MonteCarlo,
+         bench_type={'name': 'monte_carlo', 'partype': 'multithreaded', 'min_procs': 1, 'max_procs': None},
+         bench_params={'nsamples': [100000], 'type': ['naive', 'numba', 'numpy']}
          )
