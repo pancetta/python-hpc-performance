@@ -89,7 +89,6 @@ def gather_benchmarks(filter):
                     benchmarks.append((entry[0], params, entry[1]['name']))
             else:
                 benchmarks.append((entry[0], {}, entry[1]['name']))
-
     return benchmarks
 
 

@@ -29,6 +29,6 @@ register(cls=MPI_Broadcast,
 
 register(cls=Import,
          bench_type={'name': 'import', 'partype': 'sequential', 'min_procs': 1, 'max_procs': None},
-         bench_params={}
+         bench_params={'modules': ['numpy, scipy, mpi4py', 'numpy', 'scipy', 'mpi4py']}
          )
 
