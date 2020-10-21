@@ -82,10 +82,13 @@ def gather_benchmarks(filter):
     benchmarks = []
     for entry in registry:
         if filter.items() <= entry[1].items():
-            keys, values = zip(*entry[2].items())
-            list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
-            for params in list_of_params:
-                benchmarks.append((entry[0], params, entry[1]))
+            if bool(entry[2]):
+                keys, values = zip(*entry[2].items())
+                list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
+                for params in list_of_params:
+                    benchmarks.append((entry[0], params, entry[1]))
+            else:
+                benchmarks.append((entry[0], {}, entry[1]))
 
     return benchmarks
 

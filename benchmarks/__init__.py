@@ -4,6 +4,7 @@ from .optimize import Optimize
 from .matmul import MatMul
 from .matmul import MatMulSparse
 from .mpi_broadcast import MPI_Broadcast
+from .imports import Import
 
 
 register(cls=Optimize,
@@ -24,5 +25,10 @@ register(cls=MatMulSparse,
 register(cls=MPI_Broadcast,
          bench_type={'partype': 'mpi', 'min_procs': 1, 'max_procs': None},
          bench_params={'n': [10000, 100000], 'dtype': ['float64']}
+         )
+
+register(cls=Import,
+         bench_type={'partype': 'sequential', 'min_procs': 1, 'max_procs': None},
+         bench_params={}
          )
 
