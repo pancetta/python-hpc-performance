@@ -5,6 +5,8 @@ from .matmul import MatMul
 from .matmul import MatMulSparse
 from .mpi_broadcast import MPI_Broadcast
 from .imports import Import
+from .numpy_output import NumpyOutput
+from .numpy_input import NumpyInput
 
 
 register(cls=Optimize,
@@ -32,3 +34,12 @@ register(cls=Import,
          bench_params={'modules': ['numpy, scipy, mpi4py', 'numpy', 'scipy', 'mpi4py']}
          )
 
+register(cls=NumpyOutput,
+         bench_type={'name': 'numpy_output', 'partype': 'sequential', 'min_procs': 1, 'max_procs': None},
+         bench_params={'n3d': [512], 'noise_level': [0.0, 0.1], 'compressed': [True, False]}
+         )
+
+register(cls=NumpyInput,
+         bench_type={'name': 'numpy_input', 'partype': 'sequential', 'min_procs': 1, 'max_procs': None},
+         bench_params={'n3d': [512], 'compressed': [True, False]}
+         )

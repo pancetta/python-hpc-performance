@@ -6,6 +6,7 @@ import argparse
 import json
 import platform
 import psutil
+import re
 
 from tools.registry import registry
 
@@ -81,7 +82,7 @@ def gather_benchmarks(filter):
 
     benchmarks = []
     for entry in registry:
-        if filter.items() <= entry[1].items():
+        if all([re.match(v, entry[1][k]) for k, v in filter.items()]):
             if bool(entry[2]):
                 keys, values = zip(*entry[2].items())
                 list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
