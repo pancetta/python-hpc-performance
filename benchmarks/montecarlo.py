@@ -22,6 +22,8 @@ class MonteCarlo(Benchmarks):
         else:
             raise NotImplementedError()
 
+        _ = self.do_it(1)
+
 
     @staticmethod
     @jit(nopython=True)
