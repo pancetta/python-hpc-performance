@@ -7,6 +7,7 @@ import json
 import platform
 import psutil
 import re
+import importlib
 
 from tools.registry import registry
 
@@ -18,6 +19,9 @@ except ImportError:
 
 
 def get_system_info():
+
+    imports = ['numpy', 'scipy', 'numba', 'mpi4py']
+
     info = dict()
     info['platform'] = platform.system()
     info['platform-release'] = platform.release()
@@ -28,6 +32,13 @@ def get_system_info():
     info['total-cores'] = psutil.cpu_count(logical=True)
     info['cpu-frequency'] = (psutil.cpu_freq().min, psutil.cpu_freq().max)
     info['ram'] = str(round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
+    info['python-version'] = platform.python_version()
+
+    modules = dict()
+    for x in imports:
+        mod = importlib.import_module(x)
+        info['module_' + x] = mod.__version__
+
     return info
 
 

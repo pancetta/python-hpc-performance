@@ -16,7 +16,7 @@ register(cls=Optimize,
          )
 
 register(cls=MatMul,
-         bench_type={'name': 'matmul', 'partype': 'multithreaded', 'min_procs': 1, 'max_procs': None},
+         bench_type={'name': 'matmul_np', 'partype': 'multithreaded', 'min_procs': 1, 'max_procs': None},
          bench_params={'n': [1000, 2000], 'm': [1000, 2000], 'dtype': ['float64', 'float32']}
          )
 
