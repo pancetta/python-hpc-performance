@@ -9,13 +9,9 @@ import psutil
 import re
 import importlib
 
-from tools.registry import registry
+from mpi4py import MPI
 
-try:
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-except ImportError:
-    comm = None
+from tools.registry import registry
 
 
 def get_system_info():
@@ -34,7 +30,6 @@ def get_system_info():
     info['ram'] = str(round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
     info['python-version'] = platform.python_version()
 
-    modules = dict()
     for x in imports:
         mod = importlib.import_module(x)
         info['module_' + x] = mod.__version__
@@ -65,25 +60,17 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, analysis
     result['median_duration'] = np.median(durations)
     result['std_duration'] = np.std(durations)
     result['var_duration'] = np.var(durations)
-
-    if comm is not None and comm.Get_size() > 1:
-        result['sum_durations'] = comm.allreduce(sum(durations), MPI.MAX)
-    else:
-        result['sum_durations'] = sum(durations)
+    result['sum_durations'] = comm.allreduce(sum(durations), MPI.MAX)
     result['resolution'] = analysis_resolution
     result['timeline'] = np.histogram(np.cumsum(durations),
         bins=np.arange(0, result['sum_durations'] + result['resolution'], result['resolution']))[0].tolist()
-
-    if comm is not None and comm.Get_size() > 1:
-        rank = comm.Get_rank()
-        result['MPI_rank'] = rank
-        result['MPI_size'] = comm.Get_size()
-        result_gather = comm.gather(result, root=0)
-        if rank == 0:
-            for result in result_gather:
-                results.append(result)
-    else:
-        results.append(result)
+    rank = comm.Get_rank()
+    result['MPI_rank'] = rank
+    result['MPI_size'] = comm.Get_size()
+    result_gather = comm.gather(result, root=0)
+    if rank == 0:
+        for result in result_gather:
+            results.append(result)
 
     return results
 
@@ -136,7 +123,7 @@ def main():
     analysis_resolution = config['main'].getfloat('analysis_resolution')
 
     results = []
-
+    comm = MPI.COMM_WORLD
     benchmarks = gather_benchmarks(dict(config['filter']))
 
     for benchmark_class, bench_params, name in benchmarks:
@@ -150,10 +137,7 @@ def main():
             rounds += 1
             benchmark.reset()
             duration = benchmark.run()
-            if comm.Get_size() > 1:
-                sum_durations += comm.allreduce(sendobj=duration, op=MPI.SUM) / comm.Get_size()
-            else:
-                sum_durations += duration
+            sum_durations += comm.allreduce(sendobj=duration, op=MPI.SUM) / comm.Get_size()
             durations.append(duration)
 
         t1 = time.time()
