@@ -37,9 +37,10 @@ def get_system_info():
     return info
 
 
-def add_to_results(results, benchmark, rounds, durations, overall_time, analysis_resolution, comm):
+def add_to_results(results, benchmark, rounds, durations, overall_time, analysis_resolution, comment, comm):
     result = dict()
     result['name'] = benchmark.name
+    result['comment'] = comment
 
     info = get_system_info()
     for k, v in info.items():
@@ -121,6 +122,7 @@ def main():
     maxtime_per_benchmark = config['main'].getfloat('maxtime_per_benchmark')
     maxrounds_per_benchmark = config['main'].getint('maxrounds_per_benchmark')
     analysis_resolution = config['main'].getfloat('analysis_resolution')
+    comment = config['main']['comment']
 
     results = []
     comm = MPI.COMM_WORLD
@@ -141,7 +143,7 @@ def main():
             durations.append(duration)
 
         t1 = time.time()
-        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, analysis_resolution, comm)
+        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, analysis_resolution, comment, comm)
 
         benchmark.tear_down()
     save_results(results)
