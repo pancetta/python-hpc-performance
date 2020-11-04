@@ -127,7 +127,12 @@ def main():
     results = []
     comm = MPI.COMM_WORLD
     benchmarks = gather_benchmarks(dict(config['filter']))
-
+    k = 0
+    nbench = len(benchmarks)
+    overall_time = 0.0
+    print(f'Starting {nbench} benchmarks, will need at least {nbench * maxtime_per_benchmark:.2f} sec.')
+    print()
+    tbegin = time.time()
     for benchmark_class, bench_params, name in benchmarks:
         t0 = time.time()
         benchmark = benchmark_class(name=name, params=bench_params, comm=comm)
@@ -146,6 +151,16 @@ def main():
         results = add_to_results(results, benchmark, rounds, durations, t1 - t0, analysis_resolution, comment, comm)
 
         benchmark.tear_down()
+        k += 1
+        overall_time += t1 - t0
+        print(f'   done with {k} / {nbench} benchmarks, est. time left: '
+              f'{(nbench / k  - 1) * overall_time:.2f} / {nbench / k * overall_time:.2f} sec.')
+    tend = time.time()
+    print()
+    print(f'Finished {nbench} benchmarks after {tend - tbegin:.2f} sec., overhead: '
+          f'{(tend - tbegin) / (nbench * maxtime_per_benchmark) - 1:.2f}%')
+    print()
+
     save_results(results)
     eval_results(results)
 
