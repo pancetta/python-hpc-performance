@@ -9,7 +9,7 @@ parameterset:
       - { name: maxtime_per_benchmark, type: float,  _: "5E-00" } #comma separated integers must be quoted
       - { name: maxrounds_per_benchmark, type: int, _: "100000" }
       - { name: nnodes, type: int, _: "1" }
-      - { name: idx, type: int, _: "0, 1" }
+      - { name: idx, type: int, _: "0, 1, 2" }
   - name: param_set_0
     parameter:
       - { name: partype, type: str, _: "multithreaded" }
@@ -22,6 +22,12 @@ parameterset:
       - { name: ntasks, type: int, _: "1, 24, 48" }
       - { name: ncpus, type: int, _: "1" }
       - { name: outfile, type: str, _: "results_nranks=${ntasks}.json" }
+  - name: param_set_2
+    parameter:
+      - { name: partype, type: str, _: "sequential" }
+      - { name: ntasks, type: int, _: "48" }
+      - { name: ncpus, type: int, _: "1" }
+      - { name: outfile, type: str, _: "results_seq.json" }
 
 #Files
 fileset:

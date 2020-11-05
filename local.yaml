@@ -8,7 +8,6 @@ parameterset:
     parameter:
       - { name: maxtime_per_benchmark, type: float,  _: "1E-00" } #comma separated integers must be quoted
       - { name: maxrounds_per_benchmark, type: int, _: "1000000" }
-      - { name: nnodes, type: int, _: "1" }
       - { name: idx, type: int, _: "0, 1, 2" }
   - name: param_set_0
     parameter:
