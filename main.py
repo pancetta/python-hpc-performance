@@ -126,12 +126,16 @@ def main():
 
     results = []
     comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     benchmarks = gather_benchmarks(dict(config['filter']))
     k = 0
     nbench = len(benchmarks)
     overall_time = 0.0
-    print(f'Starting {nbench} benchmarks, will need at least {nbench * maxtime_per_benchmark:.2f} sec.', flush=True)
-    print()
+
+    if rank == 0:
+        print(f'Starting {nbench} benchmarks, will need at least {nbench * maxtime_per_benchmark:.2f} sec.', flush=True)
+        print()
+
     tbegin = time.time()
     for benchmark_class, bench_params, name in benchmarks:
         t0 = time.time()
@@ -153,13 +157,18 @@ def main():
         benchmark.tear_down()
         k += 1
         overall_time += t1 - t0
-        print(f'   done with {name}, {k} / {nbench} benchmarks, est. time left: '
-              f'{(nbench / k  - 1) * overall_time:.2f} / {nbench / k * overall_time:.2f} sec.', flush=True)
+
+        if rank == 0:
+            print(f'   done with {name}, {k} / {nbench} benchmarks, est. time left: '
+                  f'{(nbench / k  - 1) * overall_time:.2f} / {nbench / k * overall_time:.2f} sec.', flush=True)
+
     tend = time.time()
-    print()
-    print(f'Finished {nbench} benchmarks after {tend - tbegin:.2f} sec., overhead: '
-          f'{100 * ((tend - tbegin) / (nbench * maxtime_per_benchmark) - 1):.2f}%', flush=True)
-    print()
+
+    if rank == 0:
+        print()
+        print(f'Finished {nbench} benchmarks after {tend - tbegin:.2f} sec., overhead: '
+              f'{100 * ((tend - tbegin) / (nbench * maxtime_per_benchmark) - 1):.2f}%', flush=True)
+        print()
 
     save_results(results)
     eval_results(results)
