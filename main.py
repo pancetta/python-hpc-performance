@@ -72,6 +72,8 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, analysis
     if rank == 0:
         for result in result_gather:
             results.append(result)
+    else:
+        results = []
 
     return results
 
@@ -170,8 +172,8 @@ def main():
               f'{100 * ((tend - tbegin) / (nbench * maxtime_per_benchmark) - 1):.2f}%', flush=True)
         print()
 
-    save_results(results)
-    eval_results(results)
+        save_results(results)
+        eval_results(results)
 
 
 if __name__ == '__main__':
