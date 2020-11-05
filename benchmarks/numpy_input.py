@@ -15,10 +15,10 @@ class NumpyInput(Benchmarks):
         data = np.sin(2 * np.pi * X) * np.sin(2 * np.pi * Y)
 
         if self.params.compressed:
-            self.file = 'out.npz'
+            self.file = f'out_{comm.Get_rank()}.npz'
             np.savez_compressed(file=self.file, arr=data)
         else:
-            self.file = 'out.npy'
+            self.file = f'out_{comm.Get_rank()}.npy'
             np.save(file=self.file, arr=data)
 
     def run(self):

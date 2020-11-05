@@ -18,10 +18,10 @@ class NumpyOutput(Benchmarks):
                                                 size=(self.params.n3d, self.params.n3d))
         self.data += noise
         if self.params.compressed:
-            self.file = 'out.npz'
+            self.file = f'out_{comm.Get_rank()}.npz'
             self.write = np.savez_compressed
         else:
-            self.file = 'out.npy'
+            self.file = f'out_{comm.Get_rank()}.npy'
             self.write = np.save
 
     def run(self):
