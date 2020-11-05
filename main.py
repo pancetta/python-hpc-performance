@@ -6,6 +6,7 @@ import argparse
 import json
 import platform
 import psutil
+import re
 
 from tools.registry import registry
 
@@ -81,12 +82,14 @@ def gather_benchmarks(filter):
 
     benchmarks = []
     for entry in registry:
-        if filter.items() <= entry[1].items():
-            keys, values = zip(*entry[2].items())
-            list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
-            for params in list_of_params:
-                benchmarks.append((entry[0], params, entry[1]))
-
+        if all([re.match(v, entry[1][k]) for k, v in filter.items()]):
+            if bool(entry[2]):
+                keys, values = zip(*entry[2].items())
+                list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
+                for params in list_of_params:
+                    benchmarks.append((entry[0], params, entry[1]['name']))
+            else:
+                benchmarks.append((entry[0], {}, entry[1]['name']))
     return benchmarks
 
 
@@ -125,9 +128,9 @@ def main():
 
     benchmarks = gather_benchmarks(dict(config['filter']))
 
-    for benchmark_class, bench_params, _ in benchmarks:
+    for benchmark_class, bench_params, name in benchmarks:
         t0 = time.time()
-        benchmark = benchmark_class(comm=comm, params=bench_params)
+        benchmark = benchmark_class(name=name, params=bench_params, comm=comm)
         durations = []
         rounds = 0
         sum_durations = 0
