@@ -1,0 +1,63 @@
+name: local
+outpath: bench_run
+comment: JUBE file for running the benchmark suite on a local machine
+
+#Configuration
+parameterset:
+  - name: param_set_global
+    parameter:
+      - { name: maxtime_per_benchmark, type: float,  _: "1E-00" } #comma separated integers must be quoted
+      - { name: maxrounds_per_benchmark, type: int, _: "1000000" }
+      - { name: nnodes, type: int, _: "1" }
+      - { name: idx, type: int, _: "0, 1, 2" }
+  - name: param_set_0
+    parameter:
+      - { name: partype, type: str, _: "multithreaded" }
+      - { name: ntasks, type: int, _: "1" }
+      - { name: ncpus, type: int, _: "1, 2, 4, 8" }
+      - { name: outfile, type: str, _: "results_nthreads=${ncpus}.json" }
+  - name: param_set_1
+    parameter:
+      - { name: partype, type: str, _: "mpi" }
+      - { name: ntasks, type: int, _: "1, 2, 4, 8" }
+      - { name: ncpus, type: int, _: "1" }
+      - { name: outfile, type: str, _: "results_nranks=${ntasks}.json" }
+  - name: param_set_2
+    parameter:
+      - { name: partype, type: str, _: "sequential" }
+      - { name: ntasks, type: int, _: "1" }
+      - { name: ncpus, type: int, _: "1" }
+      - { name: outfile, type: str, _: "results_seq.json" }
+
+#Files
+fileset:
+  name: files
+  copy:
+    - input.tmpl
+    - main.py
+    - eval.py
+
+#Substitute
+substituteset:
+  - name: substitute_params
+    iofile: {in: input.tmpl, out: input.ini}
+    sub:
+      - { source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark }
+      - { source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark }
+      - { source: "#partype#", dest: $partype }
+
+#Operation
+step:
+  name: sub_step
+  shared: shared
+  use:
+    - param_set_global #use existing parameterset
+    - param_set_$idx
+    - files #use existing fileset
+    - substitute_params #use existing substituteset
+  do:
+    - export PYTHONPATH=../../../..:$PYTHONPATH
+    - mpirun -np $ntasks env OMP_NUM_THREADS=$ncpus python main.py --input input.ini
+    - cp eval.py shared/.
+    - cp results.json shared/$outfile
+    - { shared: true, _: python eval.py }

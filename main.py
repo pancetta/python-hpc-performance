@@ -158,7 +158,7 @@ def main():
     tend = time.time()
     print()
     print(f'Finished {nbench} benchmarks after {tend - tbegin:.2f} sec., overhead: '
-          f'{(tend - tbegin) / (nbench * maxtime_per_benchmark) - 1:.2f}%')
+          f'{100 * (tend - tbegin) / (nbench * maxtime_per_benchmark) - 1:.2f}%')
     print()
 
     save_results(results)

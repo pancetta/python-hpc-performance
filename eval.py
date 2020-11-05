@@ -14,8 +14,9 @@ def augment_and_join_result_dicts(result_files):
             if patterns is not None:
                 patterns = patterns[1].split('_')
                 for pattern in patterns:
-                    k, v = pattern.split('=')
-                    item['run_' + k] = v
+                    if '=' in pattern:
+                        k, v = pattern.split('=')
+                        item['run_' + k] = v
             results.append(item)
     return results
 
