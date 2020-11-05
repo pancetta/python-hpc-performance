@@ -21,7 +21,7 @@ parameterset:
       - { name: partype, type: str, _: "mpi" }
       - { name: ntasks, type: int, _: "1, 24, 48" }
       - { name: ncpus, type: int, _: "1" }
-      - { name: outfile, type: str, _: "results_nranks=${ncpus}.json" }
+      - { name: outfile, type: str, _: "results_nranks=${ntasks}.json" }
 
 #Files
 fileset:
