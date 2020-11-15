@@ -13,21 +13,21 @@ parameterset:
   - name: param_set_0
     parameter:
       - { name: partype, type: str, _: "multithreaded" }
-      - { name: ntasks, type: int, _: "2" }
-      - { name: ncpus, type: int, _: "1, 12, 24" }
+      - { name: ntasks, type: int, _: "1" }
+      - { name: ncpus, type: int, _: "1, 12, 24, 48" }
       - { name: outfile, type: str, _: "results_nthreads=${ncpus}.json" }
   - name: param_set_1
     parameter:
       - { name: partype, type: str, _: "mpi" }
-      - { name: ntasks, type: int, _: "1, 24, 48" }
+      - { name: ntasks, type: int, _: "1, 12, 24, 48" }
       - { name: ncpus, type: int, _: "1" }
       - { name: outfile, type: str, _: "results_nranks=${ntasks}.json" }
   - name: param_set_2
     parameter:
       - { name: partype, type: str, _: "sequential" }
-      - { name: ntasks, type: int, _: "48" }
+      - { name: ntasks, type: int, _: "1, 12, 24, 48" }
       - { name: ncpus, type: int, _: "1" }
-      - { name: outfile, type: str, _: "results_seq.json" }
+      - { name: outfile, type: str, _: "results_seqnranks=${ntasks}.json" }
 
 #Files
 fileset:

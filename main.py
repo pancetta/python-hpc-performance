@@ -1,5 +1,4 @@
 import itertools
-import numpy as np
 import time
 import configparser
 import argparse
@@ -8,6 +7,9 @@ import platform
 import psutil
 import re
 import importlib
+import hashlib
+
+import numpy as np
 
 from mpi4py import MPI
 
@@ -37,10 +39,12 @@ def get_system_info():
     return info
 
 
-def add_to_results(results, benchmark, rounds, durations, overall_time, analysis_resolution, comment, comm):
+def add_to_results(results, bench_params, bench_type, rounds, durations, overall_time, analysis_resolution, comment, comm):
     result = dict()
-    result['name'] = benchmark.name
+
+    result['name'] = bench_type['name']
     result['comment'] = comment
+    result['partype'] = bench_type['partype']
 
     info = get_system_info()
     for k, v in info.items():
@@ -49,8 +53,7 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, analysis
     result['rounds'] = rounds
     result['overall_time'] = overall_time
 
-    params = benchmark.params.__dict__.copy()
-    params.pop('_FrozenClass__isfrozen')
+    params = bench_params.copy()
     for k, v in params.items():
         result['params_' + k] = v
 
@@ -63,11 +66,22 @@ def add_to_results(results, benchmark, rounds, durations, overall_time, analysis
     result['var_duration'] = np.var(durations)
     result['sum_durations'] = comm.allreduce(sum(durations), MPI.MAX)
     result['resolution'] = analysis_resolution
-    result['timeline'] = np.histogram(np.cumsum(durations),
-        bins=np.arange(0, result['sum_durations'] + result['resolution'], result['resolution']))[0].tolist()
+
+    timeline = np.histogram(np.cumsum(durations), bins=np.arange(0, result['sum_durations'] + result['resolution'],
+                                                                 result['resolution']))[0]
+    result['timeline'] = timeline.tolist()
+    result['stripped_timeline'] = timeline[timeline > 0][2:-2].tolist()
+
     rank = comm.Get_rank()
+    size = comm.Get_size()
     result['MPI_rank'] = rank
-    result['MPI_size'] = comm.Get_size()
+    result['MPI_size'] = size
+
+    m = hashlib.md5()
+    encoded = json.dumps({**bench_type, **bench_params, 'MPI_size': size}, sort_keys=True).encode()
+    m.update(encoded)
+    result['id'] = m.hexdigest()
+
     result_gather = comm.gather(result, root=0)
     if rank == 0:
         for result in result_gather:
@@ -88,9 +102,9 @@ def gather_benchmarks(filter):
                 keys, values = zip(*entry[2].items())
                 list_of_params = [dict(zip(keys, v)) for v in itertools.product(*values)]
                 for params in list_of_params:
-                    benchmarks.append((entry[0], params, entry[1]['name']))
+                    benchmarks.append((entry[0], params, entry[1]))
             else:
-                benchmarks.append((entry[0], {}, entry[1]['name']))
+                benchmarks.append((entry[0], {}, entry[1]))
     return benchmarks
 
 
@@ -139,9 +153,9 @@ def main():
         print()
 
     tbegin = time.time()
-    for benchmark_class, bench_params, name in benchmarks:
+    for benchmark_class, bench_params, bench_type in benchmarks:
         t0 = time.time()
-        benchmark = benchmark_class(name=name, params=bench_params, comm=comm)
+        benchmark = benchmark_class(name=bench_type['name'], params=bench_params, comm=comm)
         durations = []
         rounds = 0
         sum_durations = 0
@@ -154,14 +168,14 @@ def main():
             durations.append(duration)
 
         t1 = time.time()
-        results = add_to_results(results, benchmark, rounds, durations, t1 - t0, analysis_resolution, comment, comm)
+        results = add_to_results(results, bench_params, bench_type, rounds, durations, t1 - t0, analysis_resolution, comment, comm)
 
         benchmark.tear_down()
         k += 1
         overall_time += t1 - t0
 
         if rank == 0:
-            print(f'   done with {name}, {k} / {nbench} benchmarks, est. time left: '
+            print(f'   done with {bench_type["name"]}, {k} / {nbench} benchmarks, est. time left: '
                   f'{(nbench / k  - 1) * overall_time:.2f} / {nbench / k * overall_time:.2f} sec.', flush=True)
 
     tend = time.time()
