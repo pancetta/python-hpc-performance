@@ -6,39 +6,33 @@ import pandas as pd
 
 result_files = glob.glob('data/' + 'results*.json')
 
-
-df = pd.read_json('data/results_macbookpro.json')
-
-idx = df.groupby(['id'])['mean_duration'].transform(max) == df['mean_duration']
-df_reduced = df[idx]
-print(df_reduced)
-
-# exit()
-
-
-# df = pd.read_json('data/results_juwels.json')
-
-# df = df[df.name.isin(['mpi_broadcast']) & df.params_n.isin([10000])]
+# df = pd.read_json('data/results_macbookpro.json')
 
 for file in result_files:
     # df = pd.read_json(file)
-    df = pd.read_json('data/results_macbookpro.json')
-    idx = df.groupby(['id'])['mean_duration'].transform(max) == df['mean_duration']
-    df = df[idx]
+    df_full = pd.read_json('data/results_macbookpro.json')
 
-    scores = []
-    for row, col in df.iterrows():
-        data = np.array(col['stripped_timeline'])
-        if data.size > 0:
-            penalty = 1 - min(data.std() / data.mean(), 1)
-        else:
-            penalty = 1
-        if penalty == 0:
-            print('boom')
-        # scores.append((col['sum_durations'] / col['mean_duration']) / col['sum_durations'] * penalty)
-        # scores.append(1.0 / col['mean_duration'] * penalty)
-        scores.append(col['MPI_size'] / col['mean_duration'] * penalty)
-    print(file, np.median(scores))
+    df_seq = df_full[df_full['partype'] == 'sequential']
+    penalties_seq = df_seq['timeline'].apply(np.asarray) \
+        .apply(lambda x: x[x > 0][2:-2]) \
+        .apply(lambda x: 1 - min(x.std() / x.mean(), 1) if len(x) > 0 else 1)
+    scores_seq = df_seq['MPI_size'] / df_seq['mean_duration'] * penalties_seq
+
+    df_mt = df_full[df_full['partype'] == 'multithreaded']
+    penalties_mt = df_mt['timeline'].apply(np.asarray) \
+        .apply(lambda x: x[x > 0][2:-2]) \
+        .apply(lambda x: 1 - min(x.std() / x.mean(), 1) if len(x) > 0 else 1)
+    scores_mt = df_mt['MPI_size'] / df_mt['mean_duration'] * penalties_mt
+    
+    df_par = df_full[df_full['partype'] == 'mpi']
+    idx = df_par.groupby(['id'])['mean_duration'].transform(max) == df_par['mean_duration']
+    df_par = df_par[idx]
+    penalties_par = df_par['timeline'].apply(np.asarray)\
+        .apply(lambda x: x[x > 0][2:-2])\
+        .apply(lambda x: 1 - min(x.std() / x.mean(), 1) if len(x) > 0 else 1)
+    # scores = 1.0 / df['mean_duration'] * penalties
+    scores_par = df_par['MPI_size'] / df_par['mean_duration'] * penalties_par
+    print(file, np.median(scores_seq), np.median(scores_mt), np.median(scores_par))
 
 exit()
 

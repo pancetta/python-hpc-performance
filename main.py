@@ -70,7 +70,6 @@ def add_to_results(results, bench_params, bench_type, rounds, durations, overall
     timeline = np.histogram(np.cumsum(durations), bins=np.arange(0, result['sum_durations'] + result['resolution'],
                                                                  result['resolution']))[0]
     result['timeline'] = timeline.tolist()
-    result['stripped_timeline'] = timeline[timeline > 0][2:-2].tolist()
 
     rank = comm.Get_rank()
     size = comm.Get_size()
