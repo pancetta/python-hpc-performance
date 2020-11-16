@@ -7,8 +7,8 @@ from .benchmarks import Benchmarks
 
 class MatMul(Benchmarks):
 
-    def __init__(self, name, params, comm):
-        super(MatMul, self).__init__(name=name, params=params, comm=comm)
+    def __init__(self, name, params, num_threads, comm):
+        super(MatMul, self).__init__(name=name, params=params, num_threads=num_threads, comm=comm)
         np.random.seed(0)
         self.matA = np.random.rand(self.params.n, self.params.m).astype(self.params.dtype)
         self.matB = np.random.rand(self.params.m, self.params.n).astype(self.params.dtype)

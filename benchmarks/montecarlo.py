@@ -9,8 +9,8 @@ from .benchmarks import Benchmarks
 class MonteCarlo(Benchmarks):
     # Idea taken directly from https://numba.pydata.org/
 
-    def __init__(self, name, params, comm):
-        super(MonteCarlo, self).__init__(name=name, params=params, comm=comm)
+    def __init__(self, name, params, num_threads, comm):
+        super(MonteCarlo, self).__init__(name=name, params=params, num_threads=num_threads, comm=comm)
         np.random.seed(0)
 
         if self.params.type == 'numba':

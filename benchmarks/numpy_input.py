@@ -5,8 +5,8 @@ from .benchmarks import Benchmarks
 
 class NumpyInput(Benchmarks):
 
-    def __init__(self, name, params, comm):
-        super(NumpyInput, self).__init__(name=name, params=params, comm=comm)
+    def __init__(self, name, params, num_threads, comm):
+        super(NumpyInput, self).__init__(name=name, params=params, num_threads=num_threads, comm=comm)
         np.random.seed(0)
         x = np.linspace(0, 1, self.params.n3d)
         y = np.linspace(0, 1, self.params.n3d)

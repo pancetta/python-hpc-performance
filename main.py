@@ -8,6 +8,7 @@ import psutil
 import re
 import importlib
 import hashlib
+import os
 
 import numpy as np
 
@@ -39,7 +40,7 @@ def get_system_info():
     return info
 
 
-def add_to_results(results, bench_params, bench_type, rounds, durations, overall_time, analysis_resolution, comment, comm):
+def add_to_results(results, bench_params, bench_type, rounds, durations, overall_time, analysis_resolution, comment, num_threads, comm):
     result = dict()
 
     result['name'] = bench_type['name']
@@ -75,6 +76,7 @@ def add_to_results(results, bench_params, bench_type, rounds, durations, overall
     size = comm.Get_size()
     result['MPI_rank'] = rank
     result['MPI_size'] = size
+    result['num_threads'] = num_threads
 
     m = hashlib.md5()
     encoded = json.dumps({**bench_type, **bench_params, 'MPI_size': size}, sort_keys=True).encode()
@@ -138,6 +140,10 @@ def main():
     maxrounds_per_benchmark = config['main'].getint('maxrounds_per_benchmark')
     analysis_resolution = config['main'].getfloat('analysis_resolution')
     comment = config['main']['comment']
+    num_threads = config['main'].getint('num_threads')
+
+    if 'OMP_NUM_THREADS' in os.environ and int(os.environ["OMP_NUM_THREADS"]) != num_threads:
+        raise ValueError('Externally specified number of threads does not match number given in parameter file')
 
     results = []
     comm = MPI.COMM_WORLD
@@ -154,7 +160,7 @@ def main():
     tbegin = time.time()
     for benchmark_class, bench_params, bench_type in benchmarks:
         t0 = time.time()
-        benchmark = benchmark_class(name=bench_type['name'], params=bench_params, comm=comm)
+        benchmark = benchmark_class(name=bench_type['name'], params=bench_params, num_threads=num_threads, comm=comm)
         durations = []
         rounds = 0
         sum_durations = 0
@@ -167,7 +173,7 @@ def main():
             durations.append(duration)
 
         t1 = time.time()
-        results = add_to_results(results, bench_params, bench_type, rounds, durations, t1 - t0, analysis_resolution, comment, comm)
+        results = add_to_results(results, bench_params, bench_type, rounds, durations, t1 - t0, analysis_resolution, comment, num_threads, comm)
 
         benchmark.tear_down()
         k += 1

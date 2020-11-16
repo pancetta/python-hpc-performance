@@ -44,6 +44,7 @@ substituteset:
       - { source: "#maxtime_per_benchmark#", dest: $maxtime_per_benchmark }
       - { source: "#maxrounds_per_benchmark#", dest: $maxrounds_per_benchmark }
       - { source: "#partype#", dest: $partype }
+      - { source: "#num_threads#", dest: $ncpus }
 
 #Operation
 step:

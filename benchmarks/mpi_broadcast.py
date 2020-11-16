@@ -7,12 +7,12 @@ from .benchmarks import Benchmarks
 
 class MPI_Broadcast(Benchmarks):
 
-    def __init__(self, name, params, comm):
+    def __init__(self, name, params, num_threads, comm):
 
         if comm is None:
             raise ValueError('No valid MPI communicator given')
 
-        super(MPI_Broadcast, self).__init__(name=name, params=params, comm=comm)
+        super(MPI_Broadcast, self).__init__(name=name, params=params, num_threads=num_threads, comm=comm)
 
         if comm.Get_rank() == 0:
             self.A = np.arange(self.params.n, dtype=self.params.dtype)  # rank 0 has proper data
